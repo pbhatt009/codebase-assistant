@@ -1,8 +1,8 @@
 import axios from 'axios'   
 const url = 'http://127.0.0.1:8000'
 
-export const getEmbeddings = async (repo_url) => {
-    const data = {"repo_url": repo_url};
+export const getEmbeddings = async (repo_url,id) => {
+    const data = {"repo_url": repo_url, "user_id": id };
     const response = await axios.post('/api/embeddings', data);
     return response.data;
 };
@@ -19,3 +19,35 @@ export const gettree = async (data) => {
     });
     return response.data.tree;
 };
+
+export const registerfn= async (username,password) => {
+    const data = {"user": username, "password": password};
+    const response = await axios.post('/api/register', data);
+    return response.data;
+}
+
+export const  getscore= async (repo_id) => {
+
+    const response = await axios.get('/api/getscore/'+repo_id);
+
+    return response.data.score;
+}
+
+
+export const getrepos= async (user_id) => {
+
+    const response = await axios.get('/api/repositories/'+user_id);
+    return response.data.repositories;
+}
+
+
+export const getthreads= async (repo_id,user_id) => {
+    const response = await axios.get('/api/threads/'+repo_id+'/'+user_id);
+    return response.data.threads;
+}
+
+export const gethistory= async (thread_id,user_id) => {
+    const response = await axios.get('/api/messages/'+thread_id+'/'+user_id);
+    return response.data.history;
+}
+

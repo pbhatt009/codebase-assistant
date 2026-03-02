@@ -1,45 +1,88 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Github, Folder, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { getEmbeddings,gettree} from '../utils/api.js';
+import { getEmbeddings,gettree,registerfn,getrepos} from '../utils/api.js';
 import { curr_repo_info, addTree } from '../store/curr_repo';
 import {addRepo} from '../store/repo_data.js'
 import { useDispatch, useSelector } from 'react-redux';
+import { supabase } from '../utils/supabase';
 
-// Mock Data
+
 
 
 export default function Home() {
-   
 const reduxRepos = useSelector((state) => state.repoData.repos);
+const [repos, setRepos] = useState({});
+const [userId, setUserId] = useState(null);
+ const hasInitialized = useRef(false);
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+  const initializeUser = async () => {
+   
+      // Check existing session
+      const { data: sessionData } = await supabase.auth.getSession();
 
-const [repos, setrepos] = useState(() => {
-  // 1. Try Redux first
-  if (reduxRepos && Object.keys(reduxRepos).length > 0) {
-    return reduxRepos;
+      if (sessionData.session) {
+        console.log("Existing session found:", sessionData.session);
+        setUserId(sessionData.session.user.id);
+        
+      }
+
+      // If no session → anonymous login
+      else{const { data, error } = await supabase.auth.signInAnonymously();
+
+      if (error) {
+        console.error(error.message);
+        
+      }
+
+      setUserId(data.user.id);
+      console.log("Anonymous user:", data.user);
+      const res=await registerfn(data.user.id,data.user.id);
+    }
+    
+}
+  initializeUser();
   }
+, []);
 
-  // 2. Try localStorage
-  const saved = localStorage.getItem("repos");
-  return saved ? JSON.parse(saved) : {};
-});
-    console.log("repos",repos)
+    
+ useEffect(() => {
+    // If Redux already has repos → use them
+    const repos_fn=async()=>{
+    console.log("user_id:", userId);
+    if (reduxRepos && Object.keys(reduxRepos).length > 0) {
+      setRepos(reduxRepos);
+      return;
+    }
+
+    // Otherwise fetch from API
+    try {
+      const res = await getrepos(userId);
+      console.log("Fetched repos:", res);
+      setRepos(res);
+    } catch (err) {
+      console.error("Failed to fetch repos:", err);
+    }
+    }
+    if(userId) repos_fn();
+  
+
+  
+}, [reduxRepos, userId]);
+  
+    // console.log("repos",repos)
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [githubUrl, setGithubUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     
-    
+
    
-      useEffect(()=>{
-              console.log("saving",repos)
-             if (repos && Object.keys(repos).length > 0) {
-    localStorage.setItem("repos", JSON.stringify(repos));
-    console.log("repos saved successfully");
-  }
-      },[repos])
+
 
     const handleSelectRepo = async (id,repoName) => {
         console.log(repos)
@@ -91,11 +134,11 @@ const [repos, setrepos] = useState(() => {
 
         try {
             // Simulate preview mode fetch
-            const embeddings = await getEmbeddings(githubUrl);
+            const embeddings = await getEmbeddings(githubUrl,userId);
             console.log(embeddings.tree);
             dispatch(curr_repo_info(embeddings.repo_info));
             dispatch(addTree(embeddings.tree));
-            setrepos(prev => ({
+            setRepos(prev => ({
             ...(prev || {}),
             [embeddings.repo_info.id]: embeddings.repo_info
             }));
