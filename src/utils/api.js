@@ -46,8 +46,14 @@ export const getthreads= async (repo_id,user_id) => {
     return response.data.threads;
 }
 
-export const gethistory= async (thread_id,user_id) => {
-    const response = await axios.get('/api/messages/'+thread_id+'/'+user_id);
+export const gethistory= async (thread_id) => {
+    const response = await axios.get('/api/messages/'+thread_id);
     return response.data.history;
 }
 
+
+export  const newchat=async (repo_id,user_id,message) =>{
+    const data = {"repo_id": repo_id, "user_id": user_id, "title": message};
+    const response = await axios.post('/api/newchat', data);
+    return response.data.res;
+}

@@ -16,6 +16,7 @@ const reduxRepos = useSelector((state) => state.repoData.repos);
 const [repos, setRepos] = useState({});
 const [userId, setUserId] = useState(null);
  const hasInitialized = useRef(false);
+ const dispatch = useDispatch();
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
@@ -26,6 +27,7 @@ const [userId, setUserId] = useState(null);
 
       if (sessionData.session) {
         console.log("Existing session found:", sessionData.session);
+        localStorage.setItem("user_id", sessionData.session.user.id);
         setUserId(sessionData.session.user.id);
         
       }
@@ -39,6 +41,7 @@ const [userId, setUserId] = useState(null);
       }
 
       setUserId(data.user.id);
+      localStorage.setItem("user_id", sessionData.session.user.id);
       console.log("Anonymous user:", data.user);
       const res=await registerfn(data.user.id,data.user.id);
     }
@@ -53,7 +56,8 @@ const [userId, setUserId] = useState(null);
     // If Redux already has repos → use them
     const repos_fn=async()=>{
     console.log("user_id:", userId);
-    if (reduxRepos && Object.keys(reduxRepos).length > 0) {
+    console.log("reduxRepos:", reduxRepos);
+    if (reduxRepos && reduxRepos.length > 0) {
       setRepos(reduxRepos);
       return;
     }
@@ -63,6 +67,7 @@ const [userId, setUserId] = useState(null);
       const res = await getrepos(userId);
       console.log("Fetched repos:", res);
       setRepos(res);
+      dispatch(addRepo(res));
     } catch (err) {
       console.error("Failed to fetch repos:", err);
     }
@@ -74,7 +79,7 @@ const [userId, setUserId] = useState(null);
 }, [reduxRepos, userId]);
   
     // console.log("repos",repos)
-    const dispatch = useDispatch();
+  
     const navigate = useNavigate();
     const [githubUrl, setGithubUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);

@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 import { User, Sparkles, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 
-export function MessageBubble({ role, content, timestamp }) {
+export function MessageBubble({ role, content, created_at }) {
     const isUser = role === 'user';
 
     return (
@@ -20,7 +20,7 @@ export function MessageBubble({ role, content, timestamp }) {
             <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm">{isUser ? "You" : "Assistant"}</span>
-                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{timestamp}</span>
+                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{created_at}</span>
                 </div>
                 <div className="prose prose-stone dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap">
                     {content}

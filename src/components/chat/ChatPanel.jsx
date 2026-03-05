@@ -5,7 +5,7 @@ import { ChatInput } from "./ChatInput";
 import { Plus, History, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import{ addThread,setThreads } from "../../store/threads";
-import { getthreads,gethistory } from "../../utils/api";
+import { getthreads,gethistory, } from "../../utils/api";
 import { u } from "framer-motion/client";
 
 export default function ChatPanel({ repoName }) {
@@ -42,45 +42,30 @@ export default function ChatPanel({ repoName }) {
   },[userId, repoId]);
 
 
-  useEffect(() => {
+  useEffect(()=>{
     if (!selectedThread) return;
+    async function fetchHistory() {
+  
 
     setLoadingHistory(true);
+    const response = await gethistory(selectedThread);
 
-    setTimeout(() => {
-      setMessages([
-        {
-          id: 1,
-          role: "system",
-          content: `Loaded history for "${selectedThread.title}"`,
-          timestamp: "Just now",
-        },
-      ]);
-      setLoadingHistory(false);
-    }, 800);
+    setMessages(response);
+    setLoadingHistory(false);
+    }
+    fetchHistory();
+   
   }, [selectedThread]);
 
   const handleNewThread = async () => {
-    const newThread = {
-      id: Date.now(),
-      title: `New Thread ${threads.length + 1}`,
-    };
+    
 
     setSelectedThread(newThread);
     setMessages([]);
   };
 
   const handleSend = (text) => {
-    if (!selectedThread) return;
-
-    const newMsg = {
-      id: Date.now(),
-      role: "user",
-      content: text,
-      timestamp: "Just now",
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
+    
   };
 
   return (
@@ -147,7 +132,7 @@ export default function ChatPanel({ repoName }) {
             threads.map((thread) => (
               <button
                 key={thread.id}
-                onClick={() => setSelectedThread(thread)}
+                onClick={() => setSelectedThread(thread.id)}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded-md border transition",
                   selectedThread?.id === thread.id

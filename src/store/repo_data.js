@@ -2,8 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 
 const initialState = {
-    "repos": {
-    }
+    "repos": []
 }
 
 const currRepoSlice = createSlice({
@@ -11,7 +10,7 @@ const currRepoSlice = createSlice({
     initialState,
     reducers: {
         addRepo: (state, action) => {
-            state.repos[action.payload.id] = action.payload;
+            state.repos= action.payload;
         },
 
         getrepo:(state,action)=>{
