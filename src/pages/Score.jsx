@@ -1,38 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, AlertTriangle, XCircle, TrendingUp } from 'lucide-react';
+import { ArrowLeft, TrendingUp } from 'lucide-react';
+import { getscore } from '../utils/api';
 import { cn } from '../lib/utils';
 
 export default function Score() {
     const { repoId } = useParams();
     const navigate = useNavigate();
+    const [repoScore, setRepoScore] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data
-    const overallScore = 85;
-    const metrics = [
-        { name: 'Maintainability', score: 90, status: 'good', description: 'Code is well-structured and easy to understand.' },
-        { name: 'Documentation', score: 75, status: 'warning', description: 'Some functions lack JSDoc comments.' },
-        { name: 'Testing', score: 60, status: 'critical', description: 'Low test coverage detected in core modules.' },
-        { name: 'Performance', score: 95, status: 'good', description: 'No significant performance bottlenecks found.' },
-    ];
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'good': return 'text-green-600 bg-green-50 border-green-200';
-            case 'warning': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-            case 'critical': return 'text-red-600 bg-red-50 border-red-200';
-            default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    useEffect(() => {
+        async function fetchScore() {
+            setLoading(true);
+            const scoreData = await getscore(repoId);
+            setRepoScore(scoreData);
+            setLoading(false);
         }
-    };
+        fetchScore();
+    }, [repoId]);
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'good': return <CheckCircle className="h-5 w-5" />;
-            case 'warning': return <AlertTriangle className="h-5 w-5" />;
-            case 'critical': return <XCircle className="h-5 w-5" />;
-            default: return null;
-        }
-    };
+    if (loading || !repoScore) {
+        return (
+            <div className="container mx-auto max-w-4xl py-8 px-6 flex justify-center items-center h-screen">
+                <span className="text-lg text-muted-foreground">Loading repository score...</span>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto max-w-4xl py-8 px-6">
@@ -45,16 +39,16 @@ export default function Score() {
             </button>
 
             <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight mb-2">Codebase Health Score</h1>
-                <p className="text-muted-foreground">Comprehensive analysis of repository quality metrics.</p>
+                <h1 className="text-3xl font-bold tracking-tight mb-2">Repository Score</h1>
+                <p className="text-muted-foreground">Automated analysis of repository quality and structure.</p>
             </div>
 
             {/* Overall Score Card */}
             <div className="bg-card border rounded-xl p-8 mb-8 flex items-center justify-between shadow-sm">
                 <div>
-                    <h2 className="text-xl font-semibold mb-2">Overall Quality</h2>
+                    <h2 className="text-xl font-semibold mb-2">Overall Score</h2>
                     <p className="text-sm text-muted-foreground max-w-md">
-                        Calculated based on static analysis, complexity metrics, and community standards.
+                        Score based on README, code complexity, comments, and structure.
                     </p>
                 </div>
                 <div className="flex flex-col items-center">
@@ -73,7 +67,7 @@ export default function Score() {
                                 className="text-primary transition-all duration-1000 ease-out"
                                 strokeWidth="8"
                                 strokeDasharray={351.86}
-                                strokeDashoffset={351.86 - (351.86 * overallScore) / 100}
+                                strokeDashoffset={repoScore?.score ? (351.86 - (351.86 * repoScore.score) / 100) : 351.86}
                                 strokeLinecap="round"
                                 stroke="currentColor"
                                 fill="transparent"
@@ -82,44 +76,122 @@ export default function Score() {
                                 cy="64"
                             />
                         </svg>
-                        <span className="absolute text-4xl font-bold">{overallScore}</span>
+                        <span className="absolute text-4xl font-bold">{repoScore?.score ?? '--'}</span>
                     </div>
-                    <span className="text-sm font-medium mt-2 text-muted-foreground">Excellent</span>
+                    <span className="text-sm font-medium mt-2 text-muted-foreground">
+                        {typeof repoScore?.score === 'number'
+                            ? repoScore.score >= 80
+                                ? "Excellent"
+                                : repoScore.score >= 60
+                                    ? "Good"
+                                    : "Needs Improvement"
+                            : "--"}
+                    </span>
                 </div>
             </div>
 
-            {/* Detailed Metrics Grid */}
-            <div className="grid gap-6 md:grid-cols-2">
-                {metrics.map((metric) => (
-                    <div key={metric.name} className="border rounded-xl p-6 bg-card hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-lg">{metric.name}</h3>
-                            <div className={cn("px-3 py-1 rounded-full text-xs font-medium border flex items-center gap-1.5", getStatusColor(metric.status))}>
-                                {getStatusIcon(metric.status)}
-                                {metric.score}/100
-                            </div>
-                        </div>
-                        <div className="w-full bg-secondary h-2 rounded-full mb-3 overflow-hidden">
-                            <div
-                                className={cn("h-full rounded-full transition-all duration-500",
-                                    metric.status === 'good' ? 'bg-green-500' :
-                                        metric.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                                )}
-                                style={{ width: `${metric.score}%` }}
-                            />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{metric.description}</p>
-                    </div>
-                ))}
+            {/* Good & Bad Points */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-green-700 mb-2">Good</h3>
+                    <ul className="list-disc pl-5 text-green-900">
+                        {Array.isArray(repoScore?.good) && repoScore.good.length > 0
+                            ? repoScore.good.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                            ))
+                            : <li>No good points found.</li>}
+                    </ul>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-red-700 mb-2">Bad</h3>
+                    <ul className="list-disc pl-5 text-red-900">
+                        {Array.isArray(repoScore?.bad) && repoScore.bad.length > 0
+                            ? repoScore.bad.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                            ))
+                            : <li>No bad points found.</li>}
+                    </ul>
+                </div>
             </div>
 
+            {/* File Scores */}
+            <div className="mb-8">
+                <h3 className="font-semibold text-lg mb-3">File Scores</h3>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm border rounded-xl">
+                        <thead>
+                            <tr className="bg-secondary">
+                                <th className="px-3 py-2 text-left">File</th>
+                                <th className="px-3 py-2 text-left">Score</th>
+                                <th className="px-3 py-2 text-left">LOC</th>
+                                <th className="px-3 py-2 text-left">Issues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Array.isArray(repoScore?.file_scores) && repoScore.file_scores.length > 0
+                                ? repoScore.file_scores.map((file, idx) => (
+                                    <tr key={idx} className="border-t">
+                                        <td className="px-3 py-2">{file.file}</td>
+                                        <td className="px-3 py-2">{file.score}</td>
+                                        <td className="px-3 py-2">{file.loc}</td>
+                                        <td className="px-3 py-2">
+                                            {Array.isArray(file.issues) && file.issues.length > 0
+                                                ? file.issues.join(', ')
+                                                : 'None'}
+                                        </td>
+                                    </tr>
+                                ))
+                                : <tr><td colSpan={4} className="px-3 py-2 text-center">No file scores found.</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Folder Scores */}
+            <div className="mb-8">
+                <h3 className="font-semibold text-lg mb-3">Folder Scores</h3>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm border rounded-xl">
+                        <thead>
+                            <tr className="bg-secondary">
+                                <th className="px-3 py-2 text-left">Folder</th>
+                                <th className="px-3 py-2 text-left">Score</th>
+                                <th className="px-3 py-2 text-left">Depth</th>
+                                <th className="px-3 py-2 text-left">Issues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Array.isArray(repoScore?.folder_scores) && repoScore.folder_scores.length > 0
+                                ? repoScore.folder_scores.map((folder, idx) => (
+                                    <tr key={idx} className="border-t">
+                                        <td className="px-3 py-2">{folder.folder}</td>
+                                        <td className="px-3 py-2">{folder.score}</td>
+                                        <td className="px-3 py-2">{folder.depth}</td>
+                                        <td className="px-3 py-2">
+                                            {Array.isArray(folder.issues) && folder.issues.length > 0
+                                                ? folder.issues.join(', ')
+                                                : 'None'}
+                                        </td>
+                                    </tr>
+                                ))
+                                : <tr><td colSpan={4} className="px-3 py-2 text-center">No folder scores found.</td></tr>}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Issues */}
             <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900 rounded-xl p-6 flex items-start gap-4">
                 <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1" />
                 <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Improvement Recommendation</h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Focus on increasing test coverage in the `core/auth` module to boost your Testing score. Adding JSDoc to utility functions will also improve the Documentation rating.
-                    </p>
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Issues & Recommendations</h3>
+                    <ul className="list-disc pl-5 text-blue-700 dark:text-blue-300">
+                        {Array.isArray(repoScore?.issue) && repoScore.issue.length > 0
+                            ? repoScore.issue.map((item, idx) => (
+                                <li key={idx}>{item}</li>
+                            ))
+                            : <li>No issues found.</li>}
+                    </ul>
                 </div>
             </div>
         </div>

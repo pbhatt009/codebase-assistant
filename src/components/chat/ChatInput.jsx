@@ -5,18 +5,17 @@ import { cn } from '../../lib/utils';
 export function ChatInput({ onSend }) {
     const [input, setInput] = useState('');
     const [scope, setScope] = useState('codebase'); // 'codebase' or 'file'
-    const textareaRef = useRef(null);
+
+
+    const[is_codebase, setisCodebase] = useState(true);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!input.trim()) return;
-        onSend(input, scope);
+        onSend(input);
         setInput('');
 
-        // Don't reset scope - user might want to keep chatting in same context
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-        }
+      
     };
 
     const handleKeyDown = (e) => {
@@ -36,7 +35,11 @@ export function ChatInput({ onSend }) {
         <div className="px-4 pb-4 pt-2 bg-gradient-to-t from-background via-background to-transparent">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <button
-                    onClick={() => setScope('codebase')}
+                hidden={true}
+                    onClick={() => {
+                        setScope('codebase');
+                        setisCodebase(true);
+                    }}
                     className={cn(
                         "text-xs px-2 py-1 rounded-full border transition-colors",
                         scope === 'codebase'
@@ -47,7 +50,11 @@ export function ChatInput({ onSend }) {
                     Entire Codebase
                 </button>
                 <button
-                    onClick={() => setScope('file')}
+                hidden={true}
+                    onClick={() => {
+                        setScope('file');
+                        setisCodebase(false);
+                    }}
                     className={cn(
                         "text-xs px-2 py-1 rounded-full border transition-colors",
                         scope === 'file'
@@ -64,7 +71,7 @@ export function ChatInput({ onSend }) {
                 </button>
 
                 <textarea
-                    ref={textareaRef}
+               
                     value={input}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}

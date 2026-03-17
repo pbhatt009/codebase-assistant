@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Github, Folder, ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getEmbeddings,gettree,registerfn,getrepos} from '../utils/api.js';
-import { curr_repo_info, addTree } from '../store/curr_repo';
+import { curr_repo_info, addTree,clear_curr_repo } from '../store/curr_repo';
+import { clear_threads } from '../store/threads.js';
 import {addRepo} from '../store/repo_data.js'
 import { useDispatch, useSelector } from 'react-redux';
 import { supabase } from '../utils/supabase';
@@ -13,7 +14,7 @@ import { supabase } from '../utils/supabase';
 
 export default function Home() {
 const reduxRepos = useSelector((state) => state.repoData.repos);
-const [repos, setRepos] = useState({});
+const [repos, setRepos] = useState([]);
 const [userId, setUserId] = useState(null);
  const hasInitialized = useRef(false);
  const dispatch = useDispatch();
@@ -77,6 +78,16 @@ const [userId, setUserId] = useState(null);
 
   
 }, [reduxRepos, userId]);
+
+//  clear the currrepo,threadinfo from store
+
+useEffect(() => {
+
+    dispatch(clear_curr_repo());
+    dispatch(clear_threads());
+
+
+},[])
   
     // console.log("repos",repos)
   
@@ -89,29 +100,22 @@ const [userId, setUserId] = useState(null);
    
 
 
-    const handleSelectRepo = async (id,repoName) => {
-        console.log(repos)
-      console.log(id)
-        const repo_data = repos[id]
-        if (!repo_data) {
-            console.log("Repo not found");
-            return;
-          }
+    const handleSelectRepo = async (repo_data) => {
         console.log(repo_data)
-          
+    
         const info={"repo_owner":repo_data.owner_name,"repo_name":repo_data.repo_name}
 
         try {
-            console.log(repo_data)
+     
 
           
             const tree = await  gettree(info)
-            console.log(tree)
+           
             dispatch(curr_repo_info(repo_data))
             dispatch(addTree(tree));
-            navigate(`/workspace/${repoName}`);
+            navigate(`/workspace/${repo_data.repo_name}`);
 
-            // Mock success - usually we'd parse the URL to get the repo name
+            
            
         } catch (err) {
             setError('Failed to load repository. Please try again.');
@@ -140,20 +144,26 @@ const [userId, setUserId] = useState(null);
         try {
             // Simulate preview mode fetch
             const embeddings = await getEmbeddings(githubUrl,userId);
-            console.log(embeddings.tree);
+            // console.log(embeddings.tree);
+            if(embeddings.exist===true){
+                console.log("repo already exists")
+                setError('Repository already exists in your workspace. Please select it from the list.');
+                setIsLoading(false);
+
+              
+                return;
+            }
+            else{
             dispatch(curr_repo_info(embeddings.repo_info));
             dispatch(addTree(embeddings.tree));
-            setRepos(prev => ({
-            ...(prev || {}),
-            [embeddings.repo_info.id]: embeddings.repo_info
-            }));
+            setRepos(prev => [...(prev || []), embeddings.repo_info]);
             
 
             dispatch(addRepo(embeddings.repo_info));
+        }
 
-            // Mock success - usually we'd parse the URL to get the repo name
-            const mockId = 'preview-' + Date.now();
-            navigate(`/workspace/${mockId}`);
+
+          
         } catch (err) {
             setError('Failed to fetch repository. Please try again.');
         } finally {
@@ -206,21 +216,21 @@ const [userId, setUserId] = useState(null);
                 </div>
             )}
 
-            {Object.keys(repos).length === 0 ? (
+            {repos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-transparent p-12 text-center min-h-[400px]">
                     <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
                         <Folder className="h-8 w-8 text-gray-500" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Repositories Available</h3>
-                    <p className="text-sm text-gray-500">Add a repository using the form above to get started.</p>
+                    <p className="text-sm text-gray-500">Add a repository using the github link.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(repos).map(([id, repo])  => (
+                    {repos.map((repo) => (
                         <div
-                            key={id}
+                            key={repo.id}
                             className="group relative flex flex-col justify-between rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/20 cursor-pointer bg-white dark:bg-zinc-950"
-                            onClick={() => handleSelectRepo(id,repo.repo_name)}
+                            onClick={() => handleSelectRepo(repo)}
                         >
                             <div className="p-6">
                                 <div className="flex items-start justify-between mb-4">
@@ -248,7 +258,7 @@ const [userId, setUserId] = useState(null);
                                                 "px-2.5 py-0.5 rounded-full text-xs font-medium border",
                                                 repo.score >= 90 ? "bg-green-50 text-green-700 border-green-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"
                                             )}>
-                                                Score: {repo.score?.final_score}
+                                                Score: {repo.score}
                                             </span>
                                         )}
                                     </div>
@@ -275,14 +285,7 @@ const [userId, setUserId] = useState(null);
                         </div>
                     ))}
 
-                    {/* Empty State / Add New Card */}
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-transparent p-6 text-center hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors cursor-pointer min-h-[200px]">
-                        <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-                            <Plus className="h-6 w-6 text-gray-500" />
-                        </div>
-                        <span className="font-medium text-gray-900 dark:text-white">Load Local Repository</span>
-                        <span className="text-sm text-gray-500 mt-1">Select a folder from your disk</span>
-                    </div>
+                  
                 </div>
             )}
         </div>

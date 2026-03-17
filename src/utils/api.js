@@ -1,5 +1,4 @@
 import axios from 'axios'   
-const url = 'http://127.0.0.1:8000'
 
 export const getEmbeddings = async (repo_url,id) => {
     const data = {"repo_url": repo_url, "user_id": id };
@@ -55,5 +54,11 @@ export const gethistory= async (thread_id) => {
 export  const newchat=async (repo_id,user_id,message) =>{
     const data = {"repo_id": repo_id, "user_id": user_id, "title": message};
     const response = await axios.post('/api/newchat', data);
-    return response.data.res;
+    
+    return response.data.response.data;
+}
+
+
+export const getmodel=async()=>{
+    const res=await axios.get('/api/');
 }

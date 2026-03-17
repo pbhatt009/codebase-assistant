@@ -5,11 +5,12 @@ import { Network, GitBranch, Search } from 'lucide-react';
 import { getFileContent } from '../../utils/api';
 import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 
 export default function CodePanel({ initialFile }) {
 const reduxRepo = useSelector((state) => state.currRepo);
-
+const navigate = useNavigate();
   const [currRepo, setrepo] = useState(() => {
     // 1. Try Redux first
     if (reduxRepo?.repo_info && Object.keys(reduxRepo.repo_info).length > 0) {
@@ -48,6 +49,9 @@ const reduxRepo = useSelector((state) => state.currRepo);
             <div className="w-full md:w-64 border-r bg-sidebar flex flex-col">
                 <div className="h-10 border-b flex items-center px-4 bg-sidebar/50">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Explorer</span>
+                    <button className="ml-auto" onClick={() => navigate(`/workspace/score/${currRepo.repo_info.id}`)}>
+                        Score
+                    </button>
                 </div>
                 <div className="flex-1 overflow-hidden">
                     <FileTree

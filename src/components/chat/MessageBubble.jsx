@@ -5,6 +5,31 @@ import { User, Sparkles, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 export function MessageBubble({ role, content, created_at }) {
     const isUser = role === 'user';
 
+    const formatContent = (text) => {
+        if (!text) return null;
+
+        // convert "* " to bullet
+        let cleaned = text.replace(/^\s*\*\s+/gm, "• ");
+
+        const parts = cleaned.split(/(\*\*[^*]+\*\*|['"][^'"]+['"])/g);
+
+        return parts.map((part, i) => {
+            // **bold**
+            if (/^\*\*.*\*\*$/.test(part)) {
+                const word = part.slice(2, -2);
+                return <strong key={i}>{word}</strong>;
+            }
+
+            // 'bold' or "bold"
+            if (/^['"].*['"]$/.test(part)) {
+                const word = part.slice(1, -1);
+                return <strong key={i}>{word}</strong>;
+            }
+
+            return <span key={i}>{part}</span>;
+        });
+    };
+
     return (
         <div className={cn(
             "flex w-full gap-4 p-6 hover:bg-black/5 dark:hover:bg-white/5 transition-colors group",
@@ -20,10 +45,13 @@ export function MessageBubble({ role, content, created_at }) {
             <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
                     <span className="font-semibold text-sm">{isUser ? "You" : "Assistant"}</span>
-                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{created_at}</span>
+                    <span className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                        {created_at}
+                    </span>
                 </div>
+
                 <div className="prose prose-stone dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap">
-                    {content}
+                    {formatContent(content)}
                 </div>
 
                 {!isUser && (

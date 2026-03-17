@@ -1,12 +1,19 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect,useRef} from "react";
 import { useSelector } from "react-redux";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { Plus, History, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import{ addThread,setThreads } from "../../store/threads";
-import { getthreads,gethistory, } from "../../utils/api";
+import { getthreads,gethistory,newchat} from "../../utils/api";
 import { u } from "framer-motion/client";
+import { useDispatch } from "react-redux";
+
+import axios from 'axios'  
+
+
+
+
 
 export default function ChatPanel({ repoName }) {
 
@@ -20,16 +27,18 @@ export default function ChatPanel({ repoName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [threads, setthread] = useState([]);
-
+  const[ThreadTitle, setThreadTitle] = useState("");
+  const[isCreatingThread, setIsCreatingThread] = useState(false);
+  const dispatch = useDispatch();
   useEffect(() => {
     async function fetchThreads() {
-
+    console.log(redux_threads)
     if(redux_threads[0].length === 0 && repoId&&userId) {
       const response=await getthreads(repoId,userId);
-      setThreads(response);
+      dispatch(setThreads(response));
       setthread(response);
-      console.log("Fetched threads:", response);
-      console.log("Updated threads state:", threads);
+    //   console.log("Fetched threads:", response);
+    //   console.log("Updated threads state:", threads);
     }
 }
       if(redux_threads[0].length === 0) {
@@ -57,21 +66,148 @@ export default function ChatPanel({ repoName }) {
    
   }, [selectedThread]);
 
-  const handleNewThread = async () => {
+
+const bottomRef = useRef(null);
+
+useEffect(() => {
+  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [messages]);
+
+
+  const handleSend = async (text) => {
+  if (!text.trim() || !selectedThread || !userId || !repoId) return;
+
+    setMessages((prev) => [
+  ...prev,
+  {
+    id:Date.now(),
+    role: "user",
+    created_at: new Date().toISOString(),
+    content: text
+  },
+  {
+    id: Date.now() + 1,
+    role: "assistant",
+    created_at: new Date().toISOString(),
+    content: ""
+  }
+]);
+
+  const response = await fetch("/api/respond", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: text,
+      thread_id: selectedThread,
+      user_id: userId,
+      repo_id: repoId,
+    }),
+  });
+const reader = response.body.getReader();
+const decoder = new TextDecoder("utf-8");
+
+
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  let buffer = decoder.decode(value, { stream: true });
+       console.log("Received buffer1:", buffer);
+  buffer=buffer.split(':').slice(1).join(':');
+     console.log("Received buffer2:", buffer);
+  
+       setMessages(prev => {
+          const updated = [...prev];
+          const last = updated.length - 1;
+
+          updated[last] = {
+            ...updated[last],
+            content: updated[last].content + buffer
+          };
+
+          return updated;
+        });
+
+      }
+    
+  }
+
+
     
 
-    setSelectedThread(newThread);
-    setMessages([]);
-  };
+  
 
-  const handleSend = (text) => {
-    
-  };
+
+
+
+
+  const createThread = async (title) => {
+    if (!title || !repoId || !userId) return;
+    const newThread = await newchat(repoId, userId, title);
+    console.log("Created new thread:", newThread);
+    setthread((prev) => [...prev, newThread[0]]);
+    dispatch(addThread(newThread[0]));
+    setSelectedThread(newThread[0].id);
+  }
 
   return (
     <div className="flex h-full relative bg-white text-slate-900 rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      
+      {isCreatingThread && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    
+    <div className="bg-white w-[360px] rounded-xl shadow-xl p-6 relative">
+
+      {/* Close button */}
+      <button
+        onClick={() => setIsCreatingThread(false)}
+        className="absolute top-3 right-3 text-slate-500 hover:text-slate-800"
+      >
+        ✕
+      </button>
+
+      {/* Title */}
+      <h2 className="text-lg font-semibold text-slate-800 mb-4 text-center">
+        Create Thread
+      </h2>
+
+      {/* Input */}
+      <input
+        type="text"
+        placeholder="Enter thread title..."
+        value={ThreadTitle}
+        onChange={(e) => setThreadTitle(e.target.value)}
+        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-2 mt-5">
+        <button
+          onClick={() => setIsCreatingThread(false)}
+          className="px-3 py-1.5 text-sm border border-slate-300 rounded-md hover:bg-slate-100"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={() => {
+            createThread(ThreadTitle);
+            setThreadTitle("");
+            setIsCreatingThread(false);
+          }}
+          className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Create
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
       {/* Sidebar */}
+      
       <div
         className={cn(
           "absolute inset-y-0 left-0 z-20 w-72 transform bg-white border-r border-slate-200 transition-transform duration-200 shadow-sm",
@@ -95,7 +231,7 @@ export default function ChatPanel({ repoName }) {
 
           <div className="flex items-center gap-1.5">
             <button
-              onClick={handleNewThread}
+              onClick={() => setIsCreatingThread(true)}
               className="inline-flex items-center justify-center rounded-md bg-blue-600 text-white px-2 py-1 text-xs font-medium hover:bg-blue-700 transition"
             >
               <Plus className="mr-1 h-3 w-3" />
@@ -122,7 +258,7 @@ export default function ChatPanel({ repoName }) {
                 Start a new conversation.
               </div>
               <button
-                onClick={handleNewThread}
+                onClick={() => setIsCreatingThread(true)}
                 className="bg-blue-600 text-white px-3 py-1.5 text-xs rounded-md hover:bg-blue-700 transition"
               >
                 Start first thread
@@ -192,7 +328,7 @@ export default function ChatPanel({ repoName }) {
               No thread selected
             </div>
             <button
-              onClick={handleNewThread}
+              onClick={() => setIsCreatingThread(true)}
               className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm hover:bg-blue-700 transition"
             >
               New thread
@@ -214,6 +350,7 @@ export default function ChatPanel({ repoName }) {
                   <MessageBubble key={msg.id} {...msg} />
                 ))
               )}
+                <div ref={bottomRef} />
             </div>
 
             <div className="border-t border-slate-200 bg-white px-4 py-2">
@@ -223,5 +360,6 @@ export default function ChatPanel({ repoName }) {
         )}
       </div>
     </div>
+
   );
 }

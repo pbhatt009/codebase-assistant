@@ -16,8 +16,12 @@ const currRepoSlice = createSlice({
         addTree: (state, action) => {
             state.tree = action.payload;
         },
+        clear_curr_repo: (state) => {
+            state.repo_info = {};
+            state.tree = [];
+        }
     },
 });
 
-export const { curr_repo_info, addTree } = currRepoSlice.actions;
+export const { curr_repo_info, addTree ,clear_curr_repo} = currRepoSlice.actions;
 export default currRepoSlice.reducer;
