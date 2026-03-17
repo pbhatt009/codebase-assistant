@@ -28,7 +28,7 @@ const [userId, setUserId] = useState(null);
 
       if (sessionData.session) {
         console.log("Existing session found:", sessionData.session);
-        localStorage.setItem("user_id", sessionData.session.user.id);
+      
         setUserId(sessionData.session.user.id);
         
       }
@@ -42,7 +42,7 @@ const [userId, setUserId] = useState(null);
       }
 
       setUserId(data.user.id);
-      localStorage.setItem("user_id", sessionData.session.user.id);
+      localStorage.setItem("user_id", data.user.id);
       console.log("Anonymous user:", data.user);
       const res=await registerfn(data.user.id,data.user.id);
     }
@@ -77,7 +77,7 @@ const [userId, setUserId] = useState(null);
   
 
   
-}, [reduxRepos, userId]);
+}, [userId]);
 
 //  clear the currrepo,threadinfo from store
 
