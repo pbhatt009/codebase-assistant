@@ -9,13 +9,17 @@ import { getthreads,gethistory,newchat} from "../../utils/api";
 import { u } from "framer-motion/client";
 import { useDispatch } from "react-redux";
 
+
 import axios from 'axios'  
 
 
-
+const api = import.meta.env.VITE_API_URL;
 
 
 export default function ChatPanel({ repoName }) {
+  
+
+
 
   const redux_threads=useState(useSelector((state) => state.threads?.threads || []));
   console.log("redux threads:", redux_threads);
@@ -93,7 +97,7 @@ useEffect(() => {
   }
 ]);
 
-  const response = await fetch("/api/respond", {
+  const response = await fetch(`${api}/respond`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
