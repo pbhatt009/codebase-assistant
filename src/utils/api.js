@@ -1,6 +1,6 @@
 import axios from 'axios'
-console.log(import.meta.env);
-console.log(import.meta.env.VITE_API_URL);
+// console.log(import.meta.env);
+// console.log(import.meta.env.VITE_API_URL);
 const api = import.meta.env.VITE_API_URL;
 
 
@@ -68,7 +68,7 @@ const api = import.meta.env.VITE_API_URL;
 // }
 
 
-console.log("API URL:", api);
+// console.log("API URL:", api);
 
 export const getEmbeddings = async (repo_url,id) => {
     const data = {"repo_url": repo_url, "user_id": id };
