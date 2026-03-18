@@ -9,7 +9,7 @@ https://codebase-assistant-eight.vercel.app
 
 ## 🚀 Features
 
-- **User Authentication** (login/signup, anonymous supported)
+- **User Authentication** (anonymous supported)
 - **Dashboard UI** for managing repositories
 - **Codebase Query Interface** (chat-like assistant)
 - **Repository Explorer** (file tree & code viewer)
@@ -17,9 +17,7 @@ https://codebase-assistant-eight.vercel.app
 - **API Integration** (fetch/axios)
 - **State Management** (React hooks & Redux)
 - **Responsive Design** (Tailwind CSS)
-- **Dark/Light Mode** (via Tailwind)
-- **Comments, Likes, Subscriptions** _(optional/future)_
-- **Video Player / Content Display** _(optional/future)_
+
 
 ---
 
@@ -110,7 +108,7 @@ https://codebase-assistant-eight.vercel.app
 
 ## 🖼 Screenshots
 
-> _Add screenshots for each major feature below._
+
 
 ### 1. Add Repository Link
 ![Repo link upload image](./image/link.png)
