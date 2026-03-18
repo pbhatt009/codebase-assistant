@@ -2,6 +2,7 @@ import axios from 'axios'
 // console.log(import.meta.env);
 // console.log(import.meta.env.VITE_API_URL);
 const api = import.meta.env.VITE_API_URL;
+const github=import.meta.env.VITE_GITHUB_TOKEN;
 
 
 // export const getEmbeddings = async (repo_url,id) => {
@@ -78,7 +79,12 @@ export const getEmbeddings = async (repo_url,id) => {
 
 export const getFileContent = async (file_url) => {
     const l_api=file_url;
-    const response = await axios.get(l_api);
+    const headers = {
+    "Authorization": `Bearer ${github}`,
+    "Accept": "application/vnd.github+json"
+}
+    const response = await axios.get(l_api, { headers });
+    console.log(response.headers.get("X-RateLimit-Remaining"));
     return response.data;
 };
 

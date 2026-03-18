@@ -154,12 +154,15 @@ useEffect(() => {
                 return;
             }
             else{
+                // console.log("repo info",embeddings.repo_info)
+            
             dispatch(curr_repo_info(embeddings.repo_info));
             dispatch(addTree(embeddings.tree));
             setRepos(prev => [...(prev || []), embeddings.repo_info]);
             
 
             dispatch(addRepo(embeddings.repo_info));
+            navigate(`/workspace/${embeddings.repo_info.repo_name}`);
         }
 
 
@@ -170,6 +173,7 @@ useEffect(() => {
             setIsLoading(false);
         }
     };
+    
 
     return (
         <div className="container mx-auto max-w-5xl py-12 px-6">
