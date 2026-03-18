@@ -17,6 +17,7 @@ const reduxRepos = useSelector((state) => state.repoData.repos);
 const [repos, setRepos] = useState([]);
 const [userId, setUserId] = useState(null);
  const hasInitialized = useRef(false);
+ const [error, setError] = useState(null);
  const dispatch = useDispatch();
   useEffect(() => {
     if (hasInitialized.current) return;
@@ -28,29 +29,43 @@ const [userId, setUserId] = useState(null);
 
       if (sessionData.session) {
         console.log("Existing session found:", sessionData.session);
-      
-        setUserId(sessionData.session.user.id);
+        const id=sessionData.session.user.id;
+     
+        if(localStorage.getItem("user_id")===null){
+        const res=await registerfn(id,id);
         
+        localStorage.setItem("user_id", id);
       }
+      else setUserId(id);
+    }
 
       // If no session → anonymous login
       else{const { data, error } = await supabase.auth.signInAnonymously();
 
       if (error) {
         console.error(error.message);
+        return;
         
       }
-
+      try{const res=await registerfn(data.user.id,data.user.id);
       setUserId(data.user.id);
       localStorage.setItem("user_id", data.user.id);
       console.log("Anonymous user:", data.user);
-      const res=await registerfn(data.user.id,data.user.id);
+      
     }
+    catch(err){
+      console.error("Failed to register user:", err);
+      setError("Failed to authenticate. Please refresh the page.");
+    }
+
+
+}
     
 }
   initializeUser();
   }
 , []);
+
 
     
  useEffect(() => {
@@ -94,7 +109,7 @@ useEffect(() => {
     const navigate = useNavigate();
     const [githubUrl, setGithubUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+
     
 
    
